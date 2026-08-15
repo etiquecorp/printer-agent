@@ -1,0 +1,57 @@
+name: Build agent
+
+on:
+  push:
+    branches: [main, develop]
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+
+  build:
+    needs: verify
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: win
+          - os: macos-latest
+            target: mac
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx electron-vite build
+      - name: Build and publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            # main: uma release por versão, marcada como release "de verdade" (bump o
+            # version do package.json antes de mesclar pra cortar uma nova).
+            npx electron-builder --${{ matrix.target }} --publish always -c.publish.releaseType=release
+          else
+            # develop: uma única release "develop" que é sobrescrita a cada merge — sempre
+            # aponta pro build mais recente da branch, sem depender de bump de versão.
+            npx electron-builder --${{ matrix.target }} --publish always \
+              -c.publish.releaseType=prerelease \
+              -c.publish.tag=develop
+          fi
+        shell: bash
