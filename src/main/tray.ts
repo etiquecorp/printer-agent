@@ -11,7 +11,7 @@ export function createTray(
     .createFromPath(iconPath)
     .resize({ width: 16, height: 16 });
   tray = new Tray(icon);
-  tray.setToolTip("Etique Agent");
+  tray.setToolTip("Agente de Impressão Etiquê");
 
   const menu = Menu.buildFromTemplate([
     {

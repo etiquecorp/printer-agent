@@ -2,7 +2,7 @@
   <img src=".github/logo.svg" alt="Etique" width="260" />
 </p>
 
-<h3 align="center">Etique Agent</h3>
+<h3 align="center">Agente de Impressão Etiquê</h3>
 
 <p align="center">
   Agente de impressão local do Etique, um SaaS de etiquetagem de validade para restaurantes.
@@ -17,7 +17,7 @@ unidade cadastra seu catálogo de itens (com condições de armazenamento — am
 refrigerado, congelado — e o prazo de validade de cada uma) e gera etiquetas com a data de
 vencimento calculada automaticamente pelo [painel web](https://github.com/etiquecorp/web).
 
-Este repositório é o **Etique Agent**: um app desktop (Electron) instalado no computador do
+Este repositório é o **Agente de Impressão Etiquê**: um app desktop (Electron) instalado no computador do
 restaurante. Ao abrir, o usuário faz login com sua conta Etique e escolhe o local ao qual aquele
 computador pertence — o agente se registra nesse local e fica pareado com ele. A partir daí,
 fica escutando via WebSocket os pedidos de impressão vindos do painel e repassa cada etiqueta

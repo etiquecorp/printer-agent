@@ -9,7 +9,7 @@ import { createTray, destroyTray } from "./tray";
 
 // In dev, Electron's own binary name ("Electron") shows in the dock/menu bar
 // unless overridden explicitly, since we're not running the packaged app yet.
-app.setName("Etique Agent");
+app.setName("Agente de Impressão Etiquê");
 
 // The window hides instead of closing (see the "close" handler below), so the WS connection and
 // printing keep working from the tray. Only an explicit "Sair" (tray menu) or Cmd+Q really quits.
