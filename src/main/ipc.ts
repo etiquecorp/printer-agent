@@ -3,6 +3,7 @@ import { ipcMain, type BrowserWindow } from "electron";
 import { agentRuntime } from "./agent/runtime";
 import { agentLogger } from "./agent/logger";
 import { isLoginItemEnabled, setLoginItemEnabled } from "./tray";
+import { runBrowserPrintInstaller, runDriverInstaller } from "./installers";
 
 export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   agentRuntime.setListener({
@@ -67,4 +68,10 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle("logs:clear", () => {
     agentLogger.clear();
   });
+
+  ipcMain.handle("installers:run-browser-print", () =>
+    runBrowserPrintInstaller(),
+  );
+
+  ipcMain.handle("installers:run-driver", () => runDriverInstaller());
 }

@@ -39,4 +39,8 @@ export const agentBridge = {
   clearLogs: (): Promise<void> => window.api.logs.clear(),
   onLogAppend: (callback: (entry: LogEntry) => void): (() => void) =>
     window.api.logs.onAppend(callback),
+
+  runBrowserPrintInstaller: (): Promise<void> =>
+    window.api.installers.runBrowserPrint(),
+  runDriverInstaller: (): Promise<void> => window.api.installers.runDriver(),
 };

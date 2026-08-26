@@ -67,6 +67,11 @@ const api = {
       return () => ipcRenderer.removeListener("logs:append", listener);
     },
   },
+  installers: {
+    runBrowserPrint: (): Promise<void> =>
+      ipcRenderer.invoke("installers:run-browser-print"),
+    runDriver: (): Promise<void> => ipcRenderer.invoke("installers:run-driver"),
+  },
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to

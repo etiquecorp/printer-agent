@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import {
   IconBuildingStore,
   IconClipboard,
+  IconDownload,
+  IconExternalLink,
+  IconHelpCircle,
   IconLogout,
   IconPrinter,
   IconRefresh,
@@ -23,6 +26,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Empty,
   EmptyDescription,
@@ -67,6 +77,10 @@ export function DashboardPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [loginItemEnabled, setLoginItemEnabled] = useState(false);
   const [testingUid, setTestingUid] = useState<string | null>(null);
+  const [installing, setInstalling] = useState<
+    "browser-print" | "driver" | null
+  >(null);
+  const [showInstallHelp, setShowInstallHelp] = useState(false);
 
   const companyName = currentTenantId
     ? session?.tenants[currentTenantId]
@@ -134,6 +148,32 @@ export function DashboardPage() {
     logout();
   }
 
+  async function handleInstallBrowserPrint() {
+    setInstalling("browser-print");
+    try {
+      await agentBridge.runBrowserPrintInstaller();
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        "Não foi possível abrir o instalador do Zebra Browser Print.",
+      );
+    } finally {
+      setInstalling(null);
+    }
+  }
+
+  async function handleInstallDriver() {
+    setInstalling("driver");
+    try {
+      await agentBridge.runDriverInstaller();
+    } catch (error) {
+      console.error(error);
+      toast.error("Não foi possível abrir o instalador do driver.");
+    } finally {
+      setInstalling(null);
+    }
+  }
+
   async function handleLoginItemChange(checked: boolean) {
     setLoginItemEnabled(checked);
     await agentBridge.setLoginItemEnabled(checked);
@@ -156,6 +196,15 @@ export function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="bg-primary-foreground/15 text-primary-foreground hover:bg-primary-foreground/25 hover:text-primary-foreground"
+            title="Primeira vez neste computador?"
+            onClick={() => setShowInstallHelp(true)}
+          >
+            <IconHelpCircle className="size-4" />
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -244,6 +293,71 @@ export function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        <Dialog open={showInstallHelp} onOpenChange={setShowInstallHelp}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Primeira vez neste computador?</DialogTitle>
+              <DialogDescription>
+                Instale o serviço de impressão e o driver da impressora Zebra
+                antes de verificar novamente.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-2 pt-4">
+              <Button
+                variant="outline"
+                className="justify-start"
+                disabled={installing !== null}
+                onClick={handleInstallBrowserPrint}
+              >
+                <IconDownload className="size-4" />
+                {installing === "browser-print"
+                  ? "Abrindo..."
+                  : "Instalar Zebra Browser Print"}
+              </Button>
+              <Button
+                variant="outline"
+                className="justify-start"
+                disabled={installing !== null}
+                onClick={handleInstallDriver}
+              >
+                <IconDownload className="size-4" />
+                {installing === "driver"
+                  ? "Abrindo..."
+                  : "Instalar driver da impressora"}
+              </Button>
+            </div>
+
+            <Separator className="my-4" />
+
+            <div className="space-y-1.5">
+              <p className="text-xs text-muted-foreground">
+                Se os botões acima não funcionarem, baixe direto do site da
+                Zebra:
+              </p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                <a
+                  href="https://www.zebra.com/br/pt/forms/browser-print-request-pc.html"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 text-sm font-medium text-primary-foreground hover:underline"
+                >
+                  <IconExternalLink className="size-3.5" />
+                  Zebra Browser Print
+                </a>
+                <a
+                  href="https://www.zebra.com/br/pt/support-downloads/printers/printer-drivers.html"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 text-sm font-medium text-primary-foreground hover:underline"
+                >
+                  <IconExternalLink className="size-3.5" />
+                  Driver da impressora
+                </a>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <Card>
           <CardHeader>

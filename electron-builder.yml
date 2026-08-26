@@ -9,8 +9,14 @@ files:
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  # Shipped via extraResources below instead — kept out of app.asar so
+  # shell.openPath() (which the OS shell handles, not Node) can run them.
+  - '!resources/installers/**'
 asarUnpack:
   - resources/**
+extraResources:
+  - from: resources/installers
+    to: installers
 win:
   executableName: etique-agent
 nsis:
