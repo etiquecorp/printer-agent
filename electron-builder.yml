@@ -19,6 +19,13 @@ extraResources:
     to: installers
 win:
   executableName: etique-agent
+  # Without an explicit arch, electron-builder defaults to the build machine's own
+  # architecture (see app-builder-lib core.js) — building on Apple Silicon would silently
+  # produce a win-arm64 installer, which won't run on the x64 PCs most users have.
+  target:
+    - target: nsis
+      arch:
+        - x64
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
