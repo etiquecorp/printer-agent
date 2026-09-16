@@ -1,10 +1,8 @@
 name: Build agent
 
 on:
-  # Produção: disparado pela tag gerada pelo release.yml
   push:
     tags: ['v*']
-    branches: [develop]
 
 permissions:
   contents: write
@@ -55,13 +53,5 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            # Tag v*: release de produção gerada pelo release.yml
-            npx electron-builder --win --publish always -c.publish.releaseType=release
-          else
-            # develop: prerelease contínua, sobrescrita a cada merge
-            npx electron-builder --win --publish always \
-              -c.publish.releaseType=prerelease \
-              -c.publish.tag=develop
-          fi
+          npx electron-builder --win --publish always -c.publish.releaseType=release
         shell: bash
