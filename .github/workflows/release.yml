@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Tipo de bump de versão'
+        required: true
+        type: choice
+        options: [patch, minor, major]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Token com permissão de push — o GITHUB_TOKEN padrão não dispara
+          # outros workflows (evita loop), mas push de tag v* é o gatilho do
+          # build.yml, então precisamos de um PAT com permissão de contents:write.
+          # Configure o secret RELEASE_TOKEN no repositório com um PAT
+          # (classic, scope: repo) ou deixe GITHUB_TOKEN se o repositório
+          # não tiver branch protection que bloqueie pushes do Actions bot.
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Configurar git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump de versão
+        id: bump
+        run: |
+          npm version ${{ inputs.bump }} --no-git-tag-version
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Commit e tag
+        run: |
+          VERSION=${{ steps.bump.outputs.version }}
+          git add package.json package-lock.json
+          git commit -m "chore(release): $VERSION [skip ci]"
+          git tag "v$VERSION"
+          git push origin main
+          git push origin "v$VERSION"
