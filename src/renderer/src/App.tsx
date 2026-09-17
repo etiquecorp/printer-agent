@@ -12,10 +12,10 @@ import { DashboardPage } from "@/features/dashboard/pages/dashboard-page";
 
 function Screens() {
   const isLoggedIn = useAuth((state) => state.isLoggedIn);
-  const locationId = useDevice((state) => state.locationId);
+  const deviceName = useDevice((state) => state.deviceName);
 
   if (!isLoggedIn) return <LoginPage />;
-  if (!locationId) return <LocationPage />;
+  if (!deviceName) return <LocationPage />;
   return <DashboardPage />;
 }
 

@@ -7,9 +7,9 @@ interface DeviceRegisterResponse {
 }
 
 export const deviceService = {
-  async register(locationId: number): Promise<DeviceRegisterResponse> {
+  async register(name: string): Promise<DeviceRegisterResponse> {
     return httpClient
-      .post("devices/register", { json: { locationId } })
+      .post("devices/register", { json: { name } })
       .json<DeviceRegisterResponse>();
   },
 };

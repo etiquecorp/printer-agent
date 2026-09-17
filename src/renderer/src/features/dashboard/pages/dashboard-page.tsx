@@ -63,7 +63,7 @@ export function DashboardPage() {
   const logout = useAuth((state) => state.logout);
   const currentTenantId = useAuth((state) => state.currentTenantId);
   const session = useAuth((state) => state.session);
-  const { locationName, clearLocation } = useDevice();
+  const { deviceName, clearDevice } = useDevice();
   const browserPrintUrl = useSettings((state) => state.browserPrintUrl);
   const setBrowserPrintUrl = useSettings((state) => state.setBrowserPrintUrl);
 
@@ -140,7 +140,7 @@ export function DashboardPage() {
 
   async function handleTrocarLocal() {
     await agentBridge.clearDevice();
-    clearLocation();
+    clearDevice();
   }
 
   async function handleSair() {
@@ -190,7 +190,7 @@ export function DashboardPage() {
             </span>
             <span className="flex items-center gap-1 text-xs text-primary-foreground/75">
               <IconBuildingStore className="size-3.5" />
-              {locationName}
+              {deviceName}
             </span>
           </div>
         </div>
@@ -211,7 +211,7 @@ export function DashboardPage() {
             className="text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
             onClick={handleTrocarLocal}
           >
-            Trocar local
+            Trocar computador
           </Button>
           <Button
             variant="ghost"
@@ -242,8 +242,7 @@ export function DashboardPage() {
             <CardContent className="space-y-3">
               {isUnauthorized && (
                 <p className="text-sm text-muted-foreground">
-                  Este computador não está mais autorizado. Troque o local pra
-                  parear de novo.
+                  Este computador não está mais autorizado. Clique em "Trocar computador" para parear de novo.
                 </p>
               )}
 
