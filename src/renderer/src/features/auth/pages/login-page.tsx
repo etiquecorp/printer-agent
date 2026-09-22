@@ -114,6 +114,7 @@ export function LoginPage() {
                 <Input
                   id="api-url"
                   defaultValue={apiUrl}
+                  placeholder="https://server.appetique.com.br"
                   onBlur={(e) => {
                     setApiUrl(e.target.value);
                     void agentBridge.updateSettings({ apiUrl: e.target.value });

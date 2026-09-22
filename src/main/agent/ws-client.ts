@@ -1,3 +1,4 @@
+import { app } from "electron";
 import WebSocket from "ws";
 
 import { browserPrintClient, type BrowserPrintDevice } from "./browser-print";
@@ -89,7 +90,9 @@ export class AgentWsClient {
       throw new Error("Impressora não encontrada.");
     }
 
-    agentLogger.info(`Enviando impressão de teste para "${device.name}"...`);
+    agentLogger.info(
+      `Enviando impressão de teste para "${device.name}" (uid=${uid}, connection=${device.connection})...`,
+    );
     try {
       await browserPrintClient.printZpl(
         this.browserPrintUrl,
@@ -97,13 +100,13 @@ export class AgentWsClient {
         TEST_ZPL(device.name),
       );
       agentLogger.info(
-        `Impressão de teste enviada para "${device.name}" com sucesso.`,
+        `Impressão de teste enviada para "${device.name}" (uid=${uid}) com sucesso.`,
       );
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Falha desconhecida.";
       agentLogger.error(
-        `Falha na impressão de teste em "${device.name}": ${message}`,
+        `Falha na impressão de teste em "${device.name}" (uid=${uid}): ${message}`,
       );
       throw error;
     }
@@ -121,9 +124,12 @@ export class AgentWsClient {
     this.setStatus("connecting");
 
     const wsUrl = this.apiUrl.replace(/^http/, "ws") + "/ws/agent";
-    agentLogger.info(`Conectando a ${wsUrl}...`);
+    agentLogger.info(`Conectando a ${wsUrl} (agente v${app.getVersion()})...`);
     const socket = new WebSocket(wsUrl, {
-      headers: { Authorization: `Bearer ${this.token}` },
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        "X-Agent-Version": app.getVersion(),
+      },
     });
     this.socket = socket;
 
@@ -144,7 +150,14 @@ export class AgentWsClient {
     socket.on("unexpected-response", (_req, res) => {
       if (res.statusCode === 401 || res.statusCode === 403) {
         this.unauthorizedAttempts += 1;
-        agentLogger.warn(`Handshake rejeitado (HTTP ${res.statusCode}).`);
+        agentLogger.warn(
+          `Handshake rejeitado: HTTP ${res.statusCode} ${res.statusMessage ?? ""} ` +
+            `(tentativa ${this.unauthorizedAttempts}/${MAX_UNAUTHORIZED_RETRIES}).`,
+        );
+      } else {
+        agentLogger.warn(
+          `Handshake com resposta inesperada: HTTP ${res.statusCode} ${res.statusMessage ?? ""}.`,
+        );
       }
     });
 
@@ -156,20 +169,27 @@ export class AgentWsClient {
       if (this.unauthorizedAttempts >= MAX_UNAUTHORIZED_RETRIES) {
         this.setStatus("unauthorized");
         agentLogger.error(
-          "Dispositivo não autorizado. É preciso trocar de local e parear de novo.",
+          `Dispositivo não autorizado após ${this.unauthorizedAttempts} tentativas ` +
+            `(código de fechamento ${code}). É preciso trocar de local e parear de novo.`,
         );
         return;
       }
 
       agentLogger.warn(
-        `Conexão perdida (código ${code}${reason.length ? `, ${reason.toString()}` : ""}).`,
+        `Conexão perdida: código ${code}${reason.length ? `, motivo "${reason.toString()}"` : ", sem motivo informado pelo servidor"}.`,
       );
       this.setStatus("error");
       this.scheduleReconnect();
     });
 
-    socket.on("error", () => {
-      // "close" always follows "error" for this client; reconnection is handled there.
+    socket.on("error", (error) => {
+      // "close" always follows "error" for this client — reconnection is scheduled there.
+      // This only records the underlying cause (DNS failure, connection refused, TLS, etc.),
+      // which the "close" event's numeric code alone doesn't reveal.
+      const cause = (error as NodeJS.ErrnoException).code;
+      agentLogger.error(
+        `Erro na conexão WebSocket com ${this.apiUrl}${cause ? ` (${cause})` : ""}: ${error.message}`,
+      );
     });
   }
 
@@ -179,7 +199,9 @@ export class AgentWsClient {
       RECONNECT_MAX_MS,
     );
     this.reconnectAttempts += 1;
-    agentLogger.info(`Tentando reconectar em ${Math.round(delay / 1000)}s...`);
+    agentLogger.info(
+      `Tentando reconectar em ${Math.round(delay / 1000)}s (tentativa ${this.reconnectAttempts})...`,
+    );
     this.reconnectTimer = setTimeout(() => {
       if (!this.manuallyDisconnected) this.openSocket();
     }, delay);
@@ -239,7 +261,8 @@ export class AgentWsClient {
       });
     } catch (error) {
       agentLogger.warn(
-        `Não foi possível falar com o BrowserPrint: ${error instanceof Error ? error.message : "erro desconhecido"}.`,
+        `Não foi possível falar com o BrowserPrint em ${this.browserPrintUrl}: ` +
+          `${error instanceof Error ? error.message : "erro desconhecido"}.`,
       );
     }
   }
@@ -258,19 +281,23 @@ export class AgentWsClient {
   }
 
   private async handlePrintJob(payload: PrintJobPayload): Promise<void> {
+    const { requestId, browserPrintUid } = payload;
     agentLogger.info(
-      `Job de impressão recebido (impressora ${payload.browserPrintUid}).`,
+      `Job de impressão recebido: requestId=${requestId}, impressora=${browserPrintUid}, ` +
+        `${payload.zpl.length} bytes de ZPL.`,
     );
-    const device = this.printers.find((p) => p.uid === payload.browserPrintUid);
+    const device = this.printers.find((p) => p.uid === browserPrintUid);
 
     if (!device) {
       agentLogger.error(
-        `Impressora ${payload.browserPrintUid} não encontrada neste computador.`,
+        `Impressora ${browserPrintUid} não encontrada neste computador ` +
+          `(requestId=${requestId}). Impressoras conhecidas: ` +
+          `${this.printers.map((p) => p.uid).join(", ") || "nenhuma"}.`,
       );
       this.send({
         type: "PRINT_RESULT",
         payload: {
-          requestId: payload.requestId,
+          requestId,
           status: "ERROR",
           message: "Impressora não encontrada neste computador.",
         },
@@ -284,20 +311,24 @@ export class AgentWsClient {
         device,
         payload.zpl,
       );
-      agentLogger.info(`Impresso com sucesso em "${device.name}".`);
+      agentLogger.info(
+        `Impresso com sucesso em "${device.name}" (uid=${browserPrintUid}, requestId=${requestId}).`,
+      );
       this.send({
         type: "PRINT_RESULT",
-        payload: { requestId: payload.requestId, status: "OK", message: null },
+        payload: { requestId, status: "OK", message: null },
       });
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
           : "Falha desconhecida ao imprimir.";
-      agentLogger.error(`Falha ao imprimir em "${device.name}": ${message}`);
+      agentLogger.error(
+        `Falha ao imprimir em "${device.name}" (uid=${browserPrintUid}, requestId=${requestId}): ${message}`,
+      );
       this.send({
         type: "PRINT_RESULT",
-        payload: { requestId: payload.requestId, status: "ERROR", message },
+        payload: { requestId, status: "ERROR", message },
       });
     }
   }
