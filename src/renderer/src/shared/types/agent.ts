@@ -15,3 +15,18 @@ export interface LogEntry {
   level: LogLevel;
   message: string;
 }
+
+export type UpdaterStatus =
+  | "idle"
+  | "checking"
+  | "not-available"
+  | "downloading"
+  | "downloaded"
+  | "error";
+
+export interface UpdaterState {
+  status: UpdaterStatus;
+  version: string | null;
+  progressPercent: number | null;
+  error: string | null;
+}

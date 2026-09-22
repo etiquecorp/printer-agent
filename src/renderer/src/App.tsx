@@ -3,6 +3,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/shared/services/query-client";
 import { useAgentRuntimeSync } from "@/shared/hooks/use-agent-runtime-sync";
 import { useLogsSync } from "@/shared/hooks/use-logs-sync";
+import { useUpdaterSync } from "@/shared/hooks/use-updater-sync";
 import { useAuth } from "@/shared/stores/auth";
 import { useDevice } from "@/shared/stores/device";
 
@@ -22,6 +23,7 @@ function Screens() {
 function App() {
   useAgentRuntimeSync();
   useLogsSync();
+  useUpdaterSync();
 
   return (
     <QueryClientProvider client={queryClient}>

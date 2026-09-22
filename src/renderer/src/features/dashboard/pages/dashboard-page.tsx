@@ -51,6 +51,7 @@ import { useAuth } from "@/shared/stores/auth";
 import { useDevice } from "@/shared/stores/device";
 import { useLogs } from "@/shared/stores/logs";
 import { useSettings } from "@/shared/stores/settings";
+import { useUpdater } from "@/shared/stores/updater";
 import { StatusBadge } from "../components/status-badge";
 
 const LOG_LEVEL_CLASS: Record<string, string> = {
@@ -71,6 +72,9 @@ export function DashboardPage() {
   const printers = useAgentRuntime((state) => state.printers);
   const logs = useLogs((state) => state.entries);
   const clearLogsLocal = useLogs((state) => state.clear);
+  const updaterStatus = useUpdater((state) => state.status);
+  const updaterVersion = useUpdater((state) => state.version);
+  const updaterProgress = useUpdater((state) => state.progressPercent);
 
   const [showSettings, setShowSettings] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
@@ -81,6 +85,8 @@ export function DashboardPage() {
     "browser-print" | "driver" | null
   >(null);
   const [showInstallHelp, setShowInstallHelp] = useState(false);
+  const [appVersion, setAppVersion] = useState("");
+  const [checkingForUpdates, setCheckingForUpdates] = useState(false);
 
   const companyName = currentTenantId
     ? session?.tenants[currentTenantId]
@@ -93,6 +99,7 @@ export function DashboardPage() {
 
   useEffect(() => {
     agentBridge.getLoginItemEnabled().then(setLoginItemEnabled);
+    agentBridge.getAppVersion().then(setAppVersion);
   }, []);
 
   async function refreshPrinters() {
@@ -177,6 +184,19 @@ export function DashboardPage() {
   async function handleLoginItemChange(checked: boolean) {
     setLoginItemEnabled(checked);
     await agentBridge.setLoginItemEnabled(checked);
+  }
+
+  async function handleCheckForUpdates() {
+    setCheckingForUpdates(true);
+    try {
+      await agentBridge.checkForUpdates();
+    } finally {
+      setCheckingForUpdates(false);
+    }
+  }
+
+  async function handleQuitAndInstall() {
+    await agentBridge.quitAndInstallUpdate();
   }
 
   return (
@@ -454,9 +474,57 @@ export function DashboardPage() {
               </Field>
 
               <Separator />
-              <p className="text-xs text-muted-foreground">
-                Versão do agente 1.0.0
-              </p>
+
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs text-muted-foreground">
+                  Versão do agente {appVersion}
+                </p>
+
+                {updaterStatus === "downloaded" ? (
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    onClick={handleQuitAndInstall}
+                  >
+                    <IconDownload className="size-4" />
+                    Reiniciar e atualizar
+                  </Button>
+                ) : (
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    disabled={
+                      checkingForUpdates ||
+                      updaterStatus === "checking" ||
+                      updaterStatus === "downloading"
+                    }
+                    onClick={handleCheckForUpdates}
+                  >
+                    <IconRefresh
+                      className={
+                        checkingForUpdates || updaterStatus === "checking"
+                          ? "size-4 animate-spin"
+                          : "size-4"
+                      }
+                    />
+                    Verificar atualizações
+                  </Button>
+                )}
+              </div>
+
+              {updaterStatus === "downloading" && (
+                <p className="text-xs text-muted-foreground">
+                  Baixando atualização
+                  {updaterVersion ? ` v${updaterVersion}` : ""}...{" "}
+                  {updaterProgress ?? 0}%
+                </p>
+              )}
+
+              {updaterStatus === "downloaded" && (
+                <p className="text-xs text-muted-foreground">
+                  Versão {updaterVersion} pronta — reinicie para aplicar.
+                </p>
+              )}
             </CardContent>
           )}
         </Card>
