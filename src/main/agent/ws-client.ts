@@ -170,7 +170,7 @@ export class AgentWsClient {
         this.setStatus("unauthorized");
         agentLogger.error(
           `Dispositivo não autorizado após ${this.unauthorizedAttempts} tentativas ` +
-            `(código de fechamento ${code}). É preciso trocar de local e parear de novo.`,
+            `(código de fechamento ${code}). É preciso trocar de computador e parear de novo.`,
         );
         return;
       }
