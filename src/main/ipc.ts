@@ -1,9 +1,10 @@
-import { ipcMain, type BrowserWindow } from "electron";
+import { app, ipcMain, type BrowserWindow } from "electron";
 
 import { agentRuntime } from "./agent/runtime";
 import { agentLogger } from "./agent/logger";
 import { isLoginItemEnabled, setLoginItemEnabled } from "./tray";
 import { runBrowserPrintInstaller, runDriverInstaller } from "./installers";
+import { appUpdater } from "./updater";
 
 export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   agentRuntime.setListener({
@@ -14,6 +15,10 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
   agentLogger.setListener((entry) =>
     mainWindow.webContents.send("logs:append", entry),
+  );
+
+  appUpdater.setListener((state) =>
+    mainWindow.webContents.send("updater:status", state),
   );
 
   ipcMain.handle("device:set-token", (_e, token: string) => {
@@ -61,6 +66,16 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
   ipcMain.handle("app:set-login-item", (_e, enabled: boolean) => {
     setLoginItemEnabled(enabled);
+  });
+
+  ipcMain.handle("app:get-version", () => app.getVersion());
+
+  ipcMain.handle("updater:get-status", () => appUpdater.getState());
+
+  ipcMain.handle("updater:check", () => appUpdater.check());
+
+  ipcMain.handle("updater:quit-and-install", () => {
+    appUpdater.quitAndInstall();
   });
 
   ipcMain.handle("logs:get", () => agentLogger.getAll());

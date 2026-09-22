@@ -6,6 +6,7 @@ import icon from "../../resources/icon.png?asset";
 import { agentRuntime } from "./agent/runtime";
 import { registerIpcHandlers } from "./ipc";
 import { createTray, destroyTray } from "./tray";
+import { appUpdater } from "./updater";
 
 // In dev, Electron's own binary name ("Electron") shows in the dock/menu bar
 // unless overridden explicitly, since we're not running the packaged app yet.
@@ -103,10 +104,17 @@ function setupApp(): void {
     // shouldn't need the renderer to be open to start printing after a machine reboot.
     agentRuntime.connect();
 
+    // electron-updater reads the publish feed baked into the packaged app; running it
+    // against an unpackaged dev build has nothing to check against and only logs noise.
+    if (app.isPackaged) {
+      appUpdater.init();
+    }
+
     app.on("activate", function () {
       // On macOS it's common to re-create a window in the app when the
       // dock icon is clicked and there are no other windows open.
-      if (BrowserWindow.getAllWindows().length === 0) mainWindow = createWindow();
+      if (BrowserWindow.getAllWindows().length === 0)
+        mainWindow = createWindow();
     });
   });
 

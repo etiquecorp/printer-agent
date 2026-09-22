@@ -1,4 +1,8 @@
-import type { BrowserPrintDevice, LogEntry } from "@/shared/types/agent";
+import type {
+  BrowserPrintDevice,
+  LogEntry,
+  UpdaterState,
+} from "@/shared/types/agent";
 
 export const agentBridge = {
   setDeviceToken: (token: string): Promise<void> =>
@@ -34,6 +38,15 @@ export const agentBridge = {
     window.api.app.getLoginItemEnabled(),
   setLoginItemEnabled: (enabled: boolean): Promise<void> =>
     window.api.app.setLoginItemEnabled(enabled),
+  getAppVersion: (): Promise<string> => window.api.app.getVersion(),
+
+  getUpdaterStatus: (): Promise<UpdaterState> =>
+    window.api.updater.getStatus() as Promise<UpdaterState>,
+  checkForUpdates: (): Promise<void> => window.api.updater.check(),
+  quitAndInstallUpdate: (): Promise<void> =>
+    window.api.updater.quitAndInstall(),
+  onUpdaterStatus: (callback: (state: UpdaterState) => void): (() => void) =>
+    window.api.updater.onStatus(callback),
 
   getLogs: (): Promise<LogEntry[]> => window.api.logs.getAll(),
   clearLogs: (): Promise<void> => window.api.logs.clear(),

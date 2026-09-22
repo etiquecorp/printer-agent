@@ -7,6 +7,19 @@ interface LogEntry {
   message: string;
 }
 
+interface UpdaterState {
+  status:
+    | "idle"
+    | "checking"
+    | "not-available"
+    | "downloading"
+    | "downloaded"
+    | "error";
+  version: string | null;
+  progressPercent: number | null;
+  error: string | null;
+}
+
 const api = {
   device: {
     setToken: (token: string): Promise<void> =>
@@ -54,6 +67,22 @@ const api = {
       ipcRenderer.invoke("app:get-login-item"),
     setLoginItemEnabled: (enabled: boolean): Promise<void> =>
       ipcRenderer.invoke("app:set-login-item", enabled),
+    getVersion: (): Promise<string> => ipcRenderer.invoke("app:get-version"),
+  },
+  updater: {
+    getStatus: (): Promise<UpdaterState> =>
+      ipcRenderer.invoke("updater:get-status"),
+    check: (): Promise<void> => ipcRenderer.invoke("updater:check"),
+    quitAndInstall: (): Promise<void> =>
+      ipcRenderer.invoke("updater:quit-and-install"),
+    onStatus: (callback: (state: UpdaterState) => void): (() => void) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        state: UpdaterState,
+      ): void => callback(state);
+      ipcRenderer.on("updater:status", listener);
+      return () => ipcRenderer.removeListener("updater:status", listener);
+    },
   },
   logs: {
     getAll: (): Promise<LogEntry[]> => ipcRenderer.invoke("logs:get"),
