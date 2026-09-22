@@ -65,7 +65,12 @@ export const agentRuntime = {
 
   updateSettings(settings: Partial<AgentSettings>): AgentSettings {
     const updated = settingsStore.update(settings);
-    agentLogger.info("Configurações atualizadas.");
+    const changedFields = Object.keys(settings) as (keyof AgentSettings)[];
+    agentLogger.info(
+      `Configurações atualizadas: ${changedFields
+        .map((field) => `${field}=${updated[field]}`)
+        .join(", ")}.`,
+    );
     if (client.getStatus() !== "idle") {
       client.disconnect();
       connectIfPossible();
