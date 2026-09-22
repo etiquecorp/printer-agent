@@ -49,7 +49,7 @@ jobs:
         run: |
           VERSION=${{ steps.bump.outputs.version }}
           git add package.json package-lock.json
-          git commit -m "chore(release): $VERSION [skip ci]"
+          git commit -m "chore(release): $VERSION"
           git tag "v$VERSION"
           git push origin main
           git push origin "v$VERSION"
