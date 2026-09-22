@@ -26,9 +26,7 @@ export function LocationPage() {
     },
     onSuccess: (deviceName) => setDeviceName(deviceName),
     onError: () =>
-      setError(
-        "Não foi possível vincular este computador. Tente de novo.",
-      ),
+      setError("Não foi possível vincular este computador. Tente de novo."),
   });
 
   function handleSubmit(e: React.FormEvent) {

@@ -262,7 +262,8 @@ export function DashboardPage() {
             <CardContent className="space-y-3">
               {isUnauthorized && (
                 <p className="text-sm text-muted-foreground">
-                  Este computador não está mais autorizado. Clique em "Trocar computador" para parear de novo.
+                  Este computador não está mais autorizado. Clique em
+                  &quot;Trocar computador&quot; para parear de novo.
                 </p>
               )}
 
